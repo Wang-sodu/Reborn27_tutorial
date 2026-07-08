@@ -9,6 +9,8 @@ find_package(OpenCV REQUIRED)
 find_package(Threads REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(fmt REQUIRED)
+find_package(zenohc REQUIRED)
+find_package(zenohcxx REQUIRED)
 
 add_library(io STATIC
   camera/hikrobot/hikrobot.cpp
@@ -67,3 +69,9 @@ set_target_properties(mindvision_demo PROPERTIES BUILD_RPATH "${IO_RPATH}")
 add_executable(hikrobot_demo src/hikrobot_demo.cpp)
 target_link_libraries(hikrobot_demo PRIVATE io)
 set_target_properties(hikrobot_demo PROPERTIES BUILD_RPATH "${IO_RPATH}")
+
+add_executable(publisher src/publisher.cpp)
+target_link_libraries(publisher PRIVATE zenohcxx::zenohc)
+
+add_executable(subscriber src/subscriber.cpp)
+target_link_libraries(subscriber PRIVATE zenohcxx::zenohc)
