@@ -1,22 +1,69 @@
-# 1. 指定需要的 CMake 最低版本
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
-# 2. 声明项目名称及使用的语言
-project(hello_world VERSION 1.0 LANGUAGES CXX)
+project(reborn27_camera_demo LANGUAGES CXX)
 
-# 3. 设置 C++ 标准（等同于 g++ 的 -std=c++17）
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 4. 指定头文件搜索路径
-include_directories(${PROJECT_SOURCE_DIR}/include)
+find_package(OpenCV REQUIRED)
+find_package(Threads REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(fmt REQUIRED)
 
-# 5. 编译库文件（静态库和动态库的区别可以自行搜索）
-add_library(hello SHARED src/hello.cpp)
-# add_library(hello STATIC src/hello.cpp)
+add_library(io STATIC
+  camera/hikrobot/hikrobot.cpp
+  camera/mindvision/mindvision.cpp
+  camera/camera.cpp
+  tools/logger.cpp
+)
 
-# 6. 创建主程序
-add_executable(main_app main.cpp)
+target_include_directories(io PUBLIC
+  ${PROJECT_SOURCE_DIR}
+  ${OpenCV_INCLUDE_DIRS}
+  camera/hikrobot/include
+  camera/mindvision/include
+)
 
-# 7. 将 hello 库链接到主程序（等同于 g++ 的 -l）
-target_link_libraries(main_app PRIVATE hello)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64")
+  target_link_directories(io PUBLIC
+    ${PROJECT_SOURCE_DIR}/camera/hikrobot/lib/amd64
+    ${PROJECT_SOURCE_DIR}/camera/mindvision/lib/amd64
+  )
+  set(IO_RPATH
+    ${PROJECT_SOURCE_DIR}/camera/hikrobot/lib/amd64
+    ${PROJECT_SOURCE_DIR}/camera/mindvision/lib/amd64
+  )
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+  target_link_directories(io PUBLIC
+    ${PROJECT_SOURCE_DIR}/camera/hikrobot/lib/arm64
+    ${PROJECT_SOURCE_DIR}/camera/mindvision/lib/arm64
+  )
+  set(IO_RPATH
+    ${PROJECT_SOURCE_DIR}/camera/hikrobot/lib/arm64
+    ${PROJECT_SOURCE_DIR}/camera/mindvision/lib/arm64
+  )
+else()
+  message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}!")
+endif()
+
+target_link_libraries(io PUBLIC
+  ${OpenCV_LIBS}
+  Threads::Threads
+  spdlog::spdlog
+  fmt::fmt
+  MvCameraControl
+  MVSDK
+  usb-1.0
+)
+
+set_target_properties(io PROPERTIES
+  BUILD_RPATH "${IO_RPATH}"
+)
+
+add_executable(mindvision_demo src/mindvision_demo.cpp)
+target_link_libraries(mindvision_demo PRIVATE io)
+set_target_properties(mindvision_demo PROPERTIES BUILD_RPATH "${IO_RPATH}")
+
+add_executable(hikrobot_demo src/hikrobot_demo.cpp)
+target_link_libraries(hikrobot_demo PRIVATE io)
+set_target_properties(hikrobot_demo PROPERTIES BUILD_RPATH "${IO_RPATH}")
