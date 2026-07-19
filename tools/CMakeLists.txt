@@ -1,8 +1,0 @@
-cmake_minimum_required(VERSION 3.10)
-project(LightDetector)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-find_package(OpenCV REQUIRED)
-add_executable(light_detector ArmorDetector.cpp drewPicture.cpp)
-target_link_libraries(light_detector ${OpenCV_LIBS})
-target_include_directories(light_detector PRIVATE ${OpenCV_INCLUDE_DIRS})
